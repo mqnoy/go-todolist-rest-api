@@ -11,7 +11,7 @@ type TaskUseCase interface {
 	ListTasks(param dto.ListParam[dto.FilterCommonParams]) (*dto.ListResponse[dto.Task], error)
 	DetailTask(param dto.DetailParam) (*dto.Task, error)
 	MarkDoneTask(param dto.DetailParam) (*dto.Task, error)
-	DeleteTask()
+	DeleteTask(param dto.DetailParam) error
 }
 
 type TaskRepository interface {
@@ -19,4 +19,5 @@ type TaskRepository interface {
 	SelectTaskById(id string) (*model.Task, error)
 	SelectAndCountTask(param dto.ListParam[dto.FilterCommonParams]) (*dto.SelectAndCount[model.Task], error)
 	UpdateTaskById(id string, values interface{}) error
+	DeleteTaskById(id string) error
 }

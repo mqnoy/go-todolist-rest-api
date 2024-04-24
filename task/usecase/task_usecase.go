@@ -79,9 +79,33 @@ func (u *taskUseCase) ComposeTask(m *model.Task) *dto.Task {
 	}
 }
 
-// DeleteTask implements domain.TaskUseCase.
-func (t *taskUseCase) DeleteTask() {
-	panic("unimplemented")
+func (u *taskUseCase) DeleteTask(param dto.DetailParam) error {
+	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	member, err := u.userUseCase.GetMemberByUserId(subjectId)
+	if err != nil {
+		return err
+	}
+
+	taskRow, err := u.DetailTaskById(param.ID)
+	if err != nil {
+		return err
+	}
+
+	// Validate ownership
+	isOwned := u.ValidateOwnerShipTask(taskRow.MemberTask, member.ID)
+	if !isOwned {
+		return cerror.WrapError(http.StatusForbidden, fmt.Errorf("you don't have access"))
+	}
+
+	// Persist Delete task
+	if err := u.taskRepository.DeleteTaskById(taskRow.ID); err != nil {
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	return nil
+
 }
 
 func (u *taskUseCase) DetailTask(param dto.DetailParam) (*dto.Task, error) {

@@ -103,3 +103,11 @@ func (m mysqlTaskRepository) SelectAndCountTask(param dto.ListParam[dto.FilterCo
 func (m mysqlTaskRepository) UpdateTaskById(id string, values interface{}) error {
 	return m.DB.Model(model.Task{}).Where("id = ?", id).Updates(values).Error
 }
+
+func (m mysqlTaskRepository) DeleteTaskById(id string) error {
+	if err := m.DB.Where("taskId=?", id).Delete(&model.MemberTask{}).Error; err != nil {
+		return err
+	}
+
+	return m.DB.Where("id=?", id).Delete(&model.Task{}).Error
+}
