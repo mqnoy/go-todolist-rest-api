@@ -14,4 +14,5 @@ type UserUseCase interface {
 type UserRepository interface {
 	SelectMemberByUserId(userId string) (*model.Member, error)
 	InsertMember(row model.Member) (*model.Member, error)
+	SelectUserByEmail(email string) (*model.User, error)
 }

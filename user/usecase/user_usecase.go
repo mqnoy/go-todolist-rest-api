@@ -37,6 +37,12 @@ func (u *userUseCase) LoginUser(payload *dto.LoginRequest) (*dto.LoginResponse, 
 // RegisterUser implements domain.UserUseCase.
 func (u *userUseCase) RegisterUser(request dto.RegisterRequest) (*dto.User, error) {
 
+	// Validate email is exist
+	existEmail, err := u.GetUserByEmail(request.Email)
+	if existEmail != nil && err == nil {
+		return nil, cerror.WrapError(http.StatusBadRequest, fmt.Errorf("email already exist"))
+	}
+
 	// Generate hashed password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -80,6 +86,21 @@ func (u *userUseCase) GetMemberByUserId(userId string) (*model.Member, error) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, cerror.WrapError(http.StatusNotFound, fmt.Errorf("user not found"))
+		}
+
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	return row, nil
+}
+
+func (u *userUseCase) GetUserByEmail(email string) (*model.User, error) {
+	row, err := u.userRepo.SelectUserByEmail(email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
 		}
 
 		clogger.Logger().SetReportCaller(true)
