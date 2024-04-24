@@ -15,6 +15,7 @@ type Task struct {
 	DueDate     time.Time `gorm:"column:dueDate"`
 	DoneAt      null.Time `gorm:"column:isDoneAt"`
 	Members     []Member  `gorm:"many2many:MemberTask"`
+	MemberTask  []MemberTask
 	TimestampColumn
 }
 

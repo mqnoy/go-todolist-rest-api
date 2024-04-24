@@ -24,6 +24,11 @@ type SelectAndCount[M any] struct {
 	Count int64
 }
 
+type DetailParam struct {
+	ID      string
+	Session JwtPayload
+}
+
 // list param
 type ListParam[T any] struct {
 	Filters    T
