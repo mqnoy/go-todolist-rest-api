@@ -20,7 +20,7 @@ func InitMySQLDatabase(cfg Configuration) *gorm.DB {
 		),
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
-			NoLowerCase:   false,
+			NoLowerCase:   true,
 		},
 	})
 
