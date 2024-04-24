@@ -1,7 +1,12 @@
 package domain
 
+import (
+	"github.com/mqnoy/go-todolist-rest-api/dto"
+	"github.com/mqnoy/go-todolist-rest-api/model"
+)
+
 type TaskUseCase interface {
-	CreateTask()
+	CreateTask(param dto.CreateParam[dto.TaskCreateRequest]) (*dto.Task, error)
 	UpdateTask()
 	ListTasks()
 	DetailTask()
@@ -9,4 +14,6 @@ type TaskUseCase interface {
 	DeleteTask()
 }
 
-type TaskRepository interface{}
+type TaskRepository interface {
+	InsertTask(row model.Task) (*model.Task, error)
+}

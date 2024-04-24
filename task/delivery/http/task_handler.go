@@ -8,6 +8,8 @@ import (
 	"github.com/mqnoy/go-todolist-rest-api/domain"
 	"github.com/mqnoy/go-todolist-rest-api/dto"
 	"github.com/mqnoy/go-todolist-rest-api/handler"
+	"github.com/mqnoy/go-todolist-rest-api/pkg/cerror"
+	"github.com/mqnoy/go-todolist-rest-api/pkg/cvalidator"
 )
 
 type taskHandler struct {
@@ -32,13 +34,26 @@ func New(mux *chi.Mux, taskUseCase domain.TaskUseCase) {
 }
 
 func (h taskHandler) PostCreateTask(w http.ResponseWriter, r *http.Request) {
-	request := &dto.LoginRequest{}
+	request := &dto.TaskCreateRequest{}
 	if err := render.Bind(r, request); err != nil {
-		handler.ParseResponse(w, r, "Login", nil, err)
+		handler.ParseResponse(w, r, "", err, cerror.WrapError(http.StatusBadRequest, err))
 		return
 	}
 
-	handler.ParseResponse(w, r, "PostCreateTask", nil, nil)
+	// Validate payload
+	if err := cvalidator.Validator.Struct(request); err != nil {
+		handler.ParseResponse(w, r, cvalidator.ErrorValidator, nil, cerror.WrapError(http.StatusBadRequest, err))
+		return
+	}
+
+	param := dto.CreateParam[dto.TaskCreateRequest]{
+		CreateValue: *request,
+	}
+
+	// Call usecase
+	result, err := h.taskUseCase.CreateTask(param)
+
+	handler.ParseResponse(w, r, "PostCreateTask", result, err)
 }
 
 func (h taskHandler) PutUpdateTask(w http.ResponseWriter, r *http.Request) {

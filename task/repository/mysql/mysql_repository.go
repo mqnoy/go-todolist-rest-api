@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"github.com/mqnoy/go-todolist-rest-api/domain"
+	"github.com/mqnoy/go-todolist-rest-api/model"
 	"gorm.io/gorm"
 )
 
@@ -13,4 +14,9 @@ func New(db *gorm.DB) domain.TaskRepository {
 	return &mysqlTaskRepository{
 		DB: db,
 	}
+}
+
+func (m mysqlTaskRepository) InsertTask(row model.Task) (*model.Task, error) {
+	err := m.DB.Create(&row).Error
+	return &row, err
 }
