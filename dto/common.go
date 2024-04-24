@@ -59,6 +59,8 @@ type FilterCommonParams struct {
 	Keyword  string
 	Name     string
 	IsActive *bool
+	MemberId string
+	IsDone   *bool
 }
 
 func ComposeTimestamp(m model.TimestampColumn) Timestamp {

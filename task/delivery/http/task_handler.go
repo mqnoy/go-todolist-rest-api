@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -61,9 +62,32 @@ func (h taskHandler) PutUpdateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h taskHandler) GetListTasks(w http.ResponseWriter, r *http.Request) {
-	handler.ParseResponse(w, r, "GetListTasks", nil, nil)
-}
+	page, _ := strconv.Atoi(handler.DefaultQuery(r, "page", "1"))
+	limit, _ := strconv.Atoi(handler.DefaultQuery(r, "limit", "10"))
+	offset, _ := strconv.Atoi(handler.DefaultQuery(r, "offset", "0"))
+	keyword, _ := handler.GetQuery(r, "keyword")
+	qIsDone, _ := handler.GetQuery(r, "isDone")
+	isDone := handler.ParseQueryToBool(qIsDone)
+	orders := handler.DefaultQuery(r, "orders", "id desc")
 
+	param := dto.ListParam[dto.FilterCommonParams]{
+		Filters: dto.FilterCommonParams{
+			Keyword: keyword,
+			IsDone:  isDone,
+		},
+		Orders: orders,
+		Pagination: dto.Pagination{
+			Page:   page,
+			Limit:  limit,
+			Offset: offset,
+		},
+	}
+
+	// Call usecase
+	result, err := h.taskUseCase.ListTasks(param)
+
+	handler.ParseResponse(w, r, "GetListTasks", result, err)
+}
 func (h taskHandler) GetDetailTask(w http.ResponseWriter, r *http.Request) {
 
 	param := dto.DetailParam{
