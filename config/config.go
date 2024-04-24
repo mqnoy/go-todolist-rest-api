@@ -55,6 +55,13 @@ type App struct {
 type MigrateConfig struct {
 	AutoMigrate bool `envconfig:"AUTO" default:"false"`
 }
+
+type JWTConfig struct {
+	Key                string `envconfig:"KEY"`
+	AccessTokenExpiry  int    `envconfig:"ACCESS_TOKEN_EXPIRY" default:"86400"`   // default 1d
+	RefreshTokenExpiry int    `envconfig:"REFRESH_TOKEN_EXPIRY" default:"604800"` // default 7d
+}
+
 type Configuration struct {
 	LoggerLevel string   `envconfig:"LOG_LEVEL" default:"error"`
 	Server      Server   `envconfig:"SERVER"`
@@ -63,7 +70,7 @@ type Configuration struct {
 
 	MigrateConfig MigrateConfig `envconfig:"MIGRATE"`
 
-	TokenKeySecret string `envconfig:"JWT_SECRET"`
+	JWT JWTConfig `envconfig:"JWT"`
 }
 
 const NAMESPACE = "GOTODOLIST"

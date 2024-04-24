@@ -4,12 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/mqnoy/go-todolist-rest-api/config"
 	"github.com/mqnoy/go-todolist-rest-api/domain"
 	"github.com/mqnoy/go-todolist-rest-api/dto"
 	"github.com/mqnoy/go-todolist-rest-api/model"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/cerror"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/clogger"
+	"github.com/mqnoy/go-todolist-rest-api/pkg/token"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -26,12 +30,71 @@ func New(userRepo domain.UserRepository) domain.UserUseCase {
 }
 
 // LoginUser implements domain.UserUseCase.
-func (u *userUseCase) LoginUser(payload *dto.LoginRequest) (*dto.LoginResponse, error) {
+func (u *userUseCase) LoginUser(payload dto.LoginRequest) (*dto.LoginResponse, error) {
+	userRow, err := u.GetUserByEmail(payload.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if userRow == nil {
+		return nil, cerror.WrapError(http.StatusBadRequest, fmt.Errorf("email not found"))
+	}
+
+	// Compare password
+	if err := u.ComparePassword(userRow.Password, payload.Password); err != nil {
+		return nil, err
+	}
+
+	// Generate accessToken
+	accessTknExpiry := jwt.NewNumericDate(time.Now().Add(time.Duration(config.AppConfig.JWT.AccessTokenExpiry) * time.Second))
+	accessTkn, err := u.GenerateToken(accessTknExpiry, userRow.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate refreshToen
+	refreshTknExpiry := jwt.NewNumericDate(time.Now().Add(time.Duration(config.AppConfig.JWT.RefreshTokenExpiry) * time.Second))
+	refreshTkn, err := u.GenerateToken(refreshTknExpiry, userRow.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	clogger.Logger().Error(config.AppConfig.JWT.Key)
+
 	return &dto.LoginResponse{
-		AccessToken:  "",
-		RefreshToken: "",
-		User:         dto.User{},
+		AccessToken:  accessTkn,
+		RefreshToken: refreshTkn,
+		User:         u.ComposeUser(userRow),
 	}, nil
+}
+
+func (u *userUseCase) GenerateToken(expiredIn *jwt.NumericDate, subjectId string) (string, error) {
+	key := []byte(config.AppConfig.JWT.Key)
+	mapClaims := token.GenerateMapClaims(token.CustomClaimOptions{
+		ExpiredTime: expiredIn,
+		SubjectId:   subjectId,
+	})
+
+	token, err := token.Generate(mapClaims, key)
+	if err != nil {
+		return "", cerror.WrapError(http.StatusInternalServerError, err)
+	}
+
+	return token, nil
+}
+
+func (u *userUseCase) ComparePassword(password string, inputPassword string) error {
+	if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(inputPassword)); err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("password doesn't match"))
+		}
+
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	return nil
 }
 
 // RegisterUser implements domain.UserUseCase.
@@ -66,10 +129,10 @@ func (u *userUseCase) RegisterUser(request dto.RegisterRequest) (*dto.User, erro
 		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
 	}
 
-	return u.ComposeUser(member), nil
+	return u.ComposeUserMember(member), nil
 }
 
-func (u *userUseCase) ComposeUser(m *model.Member) *dto.User {
+func (u *userUseCase) ComposeUserMember(m *model.Member) *dto.User {
 	return &dto.User{
 		ID:       m.User.ID,
 		FullName: m.User.FullName,
@@ -78,6 +141,18 @@ func (u *userUseCase) ComposeUser(m *model.Member) *dto.User {
 			ID: m.ID,
 		},
 		Timestamp: dto.ComposeTimestamp(m.User.TimestampColumn),
+	}
+}
+
+func (u *userUseCase) ComposeUser(m *model.User) *dto.User {
+	return &dto.User{
+		ID:       m.ID,
+		FullName: m.FullName,
+		Email:    m.Email,
+		Member: dto.Member{
+			ID: m.ID,
+		},
+		Timestamp: dto.ComposeTimestamp(m.TimestampColumn),
 	}
 }
 

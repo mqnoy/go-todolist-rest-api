@@ -7,7 +7,7 @@ import (
 
 type UserUseCase interface {
 	RegisterUser(request dto.RegisterRequest) (*dto.User, error)
-	LoginUser(payload *dto.LoginRequest) (*dto.LoginResponse, error)
+	LoginUser(payload dto.LoginRequest) (*dto.LoginResponse, error)
 	GetMemberByUserId(userId string) (*model.Member, error)
 }
 

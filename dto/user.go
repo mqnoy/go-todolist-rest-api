@@ -26,7 +26,7 @@ func (l *LoginRequest) Bind(r *http.Request) error {
 type LoginResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
-	User         User   `json:"user"`
+	User         *User  `json:"user"`
 }
 
 type RegisterRequest struct {

@@ -9,7 +9,6 @@ import (
 	"github.com/mqnoy/go-todolist-rest-api/dto"
 	"github.com/mqnoy/go-todolist-rest-api/handler"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/cerror"
-	"github.com/mqnoy/go-todolist-rest-api/pkg/clogger"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/cvalidator"
 )
 
@@ -31,14 +30,19 @@ func New(mux *chi.Mux, userUseCase domain.UserUseCase) {
 }
 
 func (h userHandler) Login(w http.ResponseWriter, r *http.Request) {
-	request := &dto.LoginRequest{}
-	if err := render.Bind(r, request); err != nil {
-		handler.ParseResponse(w, r, "Login", nil, err)
+	var request dto.LoginRequest
+	if err := render.Bind(r, &request); err != nil {
+		handler.ParseResponse(w, r, "", nil, cerror.WrapError(http.StatusBadRequest, err))
+		return
+	}
+
+	// Validate payload
+	if err := cvalidator.Validator.Struct(&request); err != nil {
+		handler.ParseResponse(w, r, cvalidator.ErrorValidator, nil, cerror.WrapError(http.StatusBadRequest, err))
 		return
 	}
 
 	result, err := h.userUseCase.LoginUser(request)
-	clogger.Logger().Debugf("request: %v", request)
 
 	handler.ParseResponse(w, r, "Login", result, err)
 }
