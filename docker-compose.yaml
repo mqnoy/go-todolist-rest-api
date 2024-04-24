@@ -1,0 +1,36 @@
+version: '2'
+services:
+  todolist_db:
+    image: mariadb:10.2
+    container_name: todolist_db
+    restart: no
+    environment:
+      - MYSQL_ROOT_PASSWORD=12345678
+      - TZ=UTC 
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+  todolist_app:
+    container_name: todolist_app
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TAG=${TAG:-latest}
+    environment:
+      - GOTODOLIST_LOG_LEVEL=debug
+      - GOTODOLIST_DATABASE_MYSQL_HOST=todolist_db
+      - GOTODOLIST_DATABASE_MYSQL_PORT=3306
+      - GOTODOLIST_DATABASE_MYSQL_USERNAME=root
+      - GOTODOLIST_DATABASE_MYSQL_PASSWORD=12345678
+      - GOTODOLIST_DATABASE_MYSQL_DBNAME=gotodolist_db
+    ports:
+      - "8080:8080"
+    depends_on:
+      - todolist_db
+
+volumes:
+  mariadb-data:

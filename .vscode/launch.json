@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Launch main.go",
+        "type": "go",
+        "console": "integratedTerminal",
+        "request": "launch",
+        "mode": "auto",
+        "envFile": "${workspaceFolder}/.env",
+        "program": "${workspaceFolder}/main.go",
+        "args": [],
+      }
+    ]
+  }
+  
