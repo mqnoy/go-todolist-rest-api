@@ -25,3 +25,8 @@ func (m mysqlUserRepository) SelectMemberByUserId(userId string) (*model.Member,
 	}
 	return row, nil
 }
+
+func (m mysqlUserRepository) InsertMember(row model.Member) (*model.Member, error) {
+	err := m.DB.Create(&row).Error
+	return &row, err
+}

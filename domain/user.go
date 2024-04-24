@@ -6,11 +6,12 @@ import (
 )
 
 type UserUseCase interface {
-	RegisterUser(payload *dto.RegisterRequest) (*dto.RegisterResponse, error)
+	RegisterUser(request dto.RegisterRequest) (*dto.User, error)
 	LoginUser(payload *dto.LoginRequest) (*dto.LoginResponse, error)
 	GetMemberByUserId(userId string) (*model.Member, error)
 }
 
 type UserRepository interface {
 	SelectMemberByUserId(userId string) (*model.Member, error)
+	InsertMember(row model.Member) (*model.Member, error)
 }

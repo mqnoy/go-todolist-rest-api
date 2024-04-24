@@ -8,7 +8,9 @@ import (
 	"github.com/mqnoy/go-todolist-rest-api/domain"
 	"github.com/mqnoy/go-todolist-rest-api/dto"
 	"github.com/mqnoy/go-todolist-rest-api/handler"
+	"github.com/mqnoy/go-todolist-rest-api/pkg/cerror"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/clogger"
+	"github.com/mqnoy/go-todolist-rest-api/pkg/cvalidator"
 )
 
 type userHandler struct {
@@ -42,5 +44,19 @@ func (h userHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h userHandler) Register(w http.ResponseWriter, r *http.Request) {
-	handler.ParseResponse(w, r, "Register", nil, nil)
+	var request dto.RegisterRequest
+	if err := render.Bind(r, &request); err != nil {
+		handler.ParseResponse(w, r, "Login", nil, err)
+		return
+	}
+
+	// Validate payload
+	if err := cvalidator.Validator.Struct(&request); err != nil {
+		handler.ParseResponse(w, r, cvalidator.ErrorValidator, nil, cerror.WrapError(http.StatusBadRequest, err))
+		return
+	}
+
+	result, err := h.userUseCase.RegisterUser(request)
+
+	handler.ParseResponse(w, r, "Register", result, err)
 }

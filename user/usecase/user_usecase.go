@@ -10,6 +10,7 @@ import (
 	"github.com/mqnoy/go-todolist-rest-api/model"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/cerror"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/clogger"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -34,8 +35,44 @@ func (u *userUseCase) LoginUser(payload *dto.LoginRequest) (*dto.LoginResponse, 
 }
 
 // RegisterUser implements domain.UserUseCase.
-func (u *userUseCase) RegisterUser(payload *dto.RegisterRequest) (*dto.RegisterResponse, error) {
-	return &dto.RegisterResponse{}, nil
+func (u *userUseCase) RegisterUser(request dto.RegisterRequest) (*dto.User, error) {
+
+	// Generate hashed password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	if err != nil {
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	row := model.Member{
+		User: model.User{
+			FullName: request.FullName,
+			Email:    request.Email,
+			Password: string(hashedPassword),
+		},
+	}
+
+	member, err := u.userRepo.InsertMember(row)
+	if err != nil {
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	return u.ComposeUser(member), nil
+}
+
+func (u *userUseCase) ComposeUser(m *model.Member) *dto.User {
+	return &dto.User{
+		ID:       m.User.ID,
+		FullName: m.User.FullName,
+		Email:    m.User.Email,
+		Member: dto.Member{
+			ID: m.ID,
+		},
+		Timestamp: dto.ComposeTimestamp(m.User.TimestampColumn),
+	}
 }
 
 func (u *userUseCase) GetMemberByUserId(userId string) (*model.Member, error) {
