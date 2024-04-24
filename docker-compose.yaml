@@ -27,6 +27,7 @@ services:
       - GOTODOLIST_DATABASE_MYSQL_USERNAME=root
       - GOTODOLIST_DATABASE_MYSQL_PASSWORD=12345678
       - GOTODOLIST_DATABASE_MYSQL_DBNAME=gotodolist_db
+      - GOTODOLIST_JWT_KEY=your-jwt-key
     ports:
       - "8080:8080"
     depends_on:
