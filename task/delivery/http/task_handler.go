@@ -29,7 +29,7 @@ func New(mux *chi.Mux, taskUseCase domain.TaskUseCase) {
 		r.Put("/:id", handler.PutUpdateTask)
 		r.Get("/", handler.GetListTasks)
 		r.Get("/{id}", handler.GetDetailTask)
-		r.Patch("/:id/done", handler.PatchMarkDoneTask)
+		r.Patch("/{id}/done", handler.PatchMarkDoneTask)
 		r.Delete("/:id", handler.DeleteTask)
 	})
 }
@@ -101,7 +101,15 @@ func (h taskHandler) GetDetailTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h taskHandler) PatchMarkDoneTask(w http.ResponseWriter, r *http.Request) {
-	handler.ParseResponse(w, r, "PatchMarkDoneTask", nil, nil)
+
+	param := dto.DetailParam{
+		ID: chi.URLParam(r, "id"),
+	}
+
+	// Call usecase
+	result, err := h.taskUseCase.MarkDoneTask(param)
+
+	handler.ParseResponse(w, r, "PatchMarkDoneTask", result, err)
 }
 
 func (h taskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {

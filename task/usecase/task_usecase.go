@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"time"
 
 	"github.com/mqnoy/go-todolist-rest-api/domain"
 	"github.com/mqnoy/go-todolist-rest-api/dto"
@@ -12,7 +13,6 @@ import (
 	"github.com/mqnoy/go-todolist-rest-api/pkg/cerror"
 	"github.com/mqnoy/go-todolist-rest-api/pkg/clogger"
 	"github.com/mqnoy/go-todolist-rest-api/util"
-	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
 )
 
@@ -74,7 +74,7 @@ func (u *taskUseCase) ComposeTask(m *model.Task) *dto.Task {
 		Title:       m.Title,
 		Description: m.Description,
 		DueDate:     util.DateToEpoch(m.DueDate),
-		DoneAt:      null.Int{},
+		DoneAt:      dto.ParseNullTimeToEpoch(m.DoneAt),
 		Timestamp:   dto.ComposeTimestamp(m.TimestampColumn),
 	}
 }
@@ -92,15 +92,9 @@ func (u *taskUseCase) DetailTask(param dto.DetailParam) (*dto.Task, error) {
 		return nil, err
 	}
 
-	taskRow, err := u.taskRepository.SelectTaskById(param.ID)
+	taskRow, err := u.DetailTaskById(param.ID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, cerror.WrapError(http.StatusNotFound, fmt.Errorf("task not found"))
-		}
-
-		clogger.Logger().SetReportCaller(true)
-		clogger.Logger().Errorf(err.Error())
-		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		return nil, err
 	}
 
 	isOwned := u.ValidateOwnerShipTask(taskRow.MemberTask, member.ID)
@@ -166,9 +160,61 @@ func (u *taskUseCase) ComposeListTask(m []*model.Task) []*dto.Task {
 	return results
 }
 
-// MarkDoneTask implements domain.TaskUseCase.
-func (t *taskUseCase) MarkDoneTask() {
-	panic("unimplemented")
+func (u *taskUseCase) MarkDoneTask(param dto.DetailParam) (*dto.Task, error) {
+	// TODO: Determine member from subject
+	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	member, err := u.userUseCase.GetMemberByUserId(subjectId)
+	if err != nil {
+		return nil, err
+	}
+
+	taskRow, err := u.DetailTaskById(param.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	isOwned := u.ValidateOwnerShipTask(taskRow.MemberTask, member.ID)
+	if !isOwned {
+		return nil, cerror.WrapError(http.StatusForbidden, fmt.Errorf("you don't have access"))
+	}
+
+	// Validate task is done
+	if taskRow.DoneAt.Valid {
+		return nil, cerror.WrapError(http.StatusBadRequest, fmt.Errorf("task already done"))
+	}
+
+	values := map[string]interface{}{
+		"isDoneAt": time.Now(),
+	}
+
+	if err := u.taskRepository.UpdateTaskById(taskRow.ID, values); err != nil {
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	updatedTaskRow, err := u.DetailTaskById(param.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Compose Response
+	return u.ComposeTask(updatedTaskRow), nil
+}
+
+func (u *taskUseCase) DetailTaskById(id string) (*model.Task, error) {
+	row, err := u.taskRepository.SelectTaskById(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, cerror.WrapError(http.StatusNotFound, fmt.Errorf("task not found"))
+		}
+
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	return row, nil
 }
 
 // UpdateTask implements domain.TaskUseCase.

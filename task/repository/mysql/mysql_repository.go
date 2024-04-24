@@ -99,3 +99,7 @@ func (m mysqlTaskRepository) SelectAndCountTask(param dto.ListParam[dto.FilterCo
 		Count: count,
 	}, nil
 }
+
+func (m mysqlTaskRepository) UpdateTaskById(id string, values interface{}) error {
+	return m.DB.Model(model.Task{}).Where("id = ?", id).Updates(values).Error
+}
