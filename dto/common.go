@@ -44,7 +44,6 @@ type CreateParam[T any] struct {
 
 // update param
 type UpdateParam[T any] struct {
-	UID         string
 	ID          string
 	UpdateValue T
 	Session     JwtPayload

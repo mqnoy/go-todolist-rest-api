@@ -26,7 +26,7 @@ func New(mux *chi.Mux, taskUseCase domain.TaskUseCase) {
 
 	mux.Route("/tasks", func(r chi.Router) {
 		r.Post("/", handler.PostCreateTask)
-		r.Put("/:id", handler.PutUpdateTask)
+		r.Put("/{id}", handler.PutUpdateTask)
 		r.Get("/", handler.GetListTasks)
 		r.Get("/{id}", handler.GetDetailTask)
 		r.Patch("/{id}/done", handler.PatchMarkDoneTask)
@@ -58,7 +58,27 @@ func (h taskHandler) PostCreateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h taskHandler) PutUpdateTask(w http.ResponseWriter, r *http.Request) {
-	handler.ParseResponse(w, r, "PutUpdateTask", nil, nil)
+	var request dto.TaskCreateRequest
+	if err := render.Bind(r, &request); err != nil {
+		handler.ParseResponse(w, r, "", err, cerror.WrapError(http.StatusBadRequest, err))
+		return
+	}
+
+	// Validate payload
+	if err := cvalidator.Validator.Struct(&request); err != nil {
+		handler.ParseResponse(w, r, cvalidator.ErrorValidator, nil, cerror.WrapError(http.StatusBadRequest, err))
+		return
+	}
+
+	param := dto.UpdateParam[dto.TaskCreateRequest]{
+		UpdateValue: request,
+		ID:          chi.URLParam(r, "id"),
+	}
+
+	// Call usecase
+	result, err := h.taskUseCase.UpdateTask(param)
+
+	handler.ParseResponse(w, r, "PutUpdateTask", result, err)
 }
 
 func (h taskHandler) GetListTasks(w http.ResponseWriter, r *http.Request) {

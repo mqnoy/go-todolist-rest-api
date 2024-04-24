@@ -7,7 +7,7 @@ import (
 
 type TaskUseCase interface {
 	CreateTask(param dto.CreateParam[dto.TaskCreateRequest]) (*dto.Task, error)
-	UpdateTask()
+	UpdateTask(param dto.UpdateParam[dto.TaskCreateRequest]) (*dto.Task, error)
 	ListTasks(param dto.ListParam[dto.FilterCommonParams]) (*dto.ListResponse[dto.Task], error)
 	DetailTask(param dto.DetailParam) (*dto.Task, error)
 	MarkDoneTask(param dto.DetailParam) (*dto.Task, error)

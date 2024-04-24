@@ -217,7 +217,62 @@ func (u *taskUseCase) DetailTaskById(id string) (*model.Task, error) {
 	return row, nil
 }
 
-// UpdateTask implements domain.TaskUseCase.
-func (t *taskUseCase) UpdateTask() {
-	panic("unimplemented")
+func (u *taskUseCase) UpdateTask(param dto.UpdateParam[dto.TaskCreateRequest]) (*dto.Task, error) {
+	// TODO: Determine member from subject
+	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	member, err := u.userUseCase.GetMemberByUserId(subjectId)
+	if err != nil {
+		return nil, err
+	}
+
+	taskRow, err := u.DetailTaskById(param.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	isOwned := u.ValidateOwnerShipTask(taskRow.MemberTask, member.ID)
+	if !isOwned {
+		return nil, cerror.WrapError(http.StatusForbidden, fmt.Errorf("you don't have access"))
+	}
+
+	// Validate task is done
+	if taskRow.DoneAt.Valid {
+		return nil, cerror.WrapError(http.StatusBadRequest, fmt.Errorf("task already done"))
+	}
+
+	updateValue := param.UpdateValue
+	values := map[string]interface{}{}
+
+	if updateValue.Title != "" {
+		values["title"] = updateValue.Title
+	}
+
+	if updateValue.Description != "" {
+		values["description"] = updateValue.Description
+	}
+
+	if updateValue.DueDate != 0 {
+		dueDate, err := util.NumberToEpoch(updateValue.DueDate)
+		if err != nil {
+			clogger.Logger().SetReportCaller(true)
+			clogger.Logger().Errorf(err.Error())
+			return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		}
+
+		values["dueDate"] = dueDate
+	}
+
+	if err := u.taskRepository.UpdateTaskById(taskRow.ID, values); err != nil {
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	updatedTaskRow, err := u.DetailTaskById(param.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Compose Response
+	return u.ComposeTask(updatedTaskRow), nil
 }
