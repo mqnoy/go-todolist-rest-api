@@ -4,11 +4,13 @@ import "github.com/mqnoy/go-todolist-rest-api/domain"
 
 type taskUseCase struct {
 	taskRepository domain.TaskRepository
+	userUseCase    domain.UserUseCase
 }
 
-func New(taskRepository domain.TaskRepository) domain.TaskUseCase {
+func New(taskRepository domain.TaskRepository, userUseCase domain.UserUseCase) domain.TaskUseCase {
 	return &taskUseCase{
 		taskRepository: taskRepository,
+		userUseCase:    userUseCase,
 	}
 }
 

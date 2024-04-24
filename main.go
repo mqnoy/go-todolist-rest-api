@@ -122,7 +122,7 @@ func AppHandler(appctx AppCtx) http.Handler {
 
 	// Initialize UseCase
 	userUseCase := _userUseCase.New(userRepoMySQL)
-	taskUseCase := _taskUseCase.New(taskRepoMySQL)
+	taskUseCase := _taskUseCase.New(taskRepoMySQL, userUseCase)
 
 	mux.NotFound(handler.FallbackHandler)
 
