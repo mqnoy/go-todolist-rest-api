@@ -20,4 +20,6 @@ type TaskRepository interface {
 	SelectAndCountTask(param dto.ListParam[dto.FilterCommonParams]) (*dto.SelectAndCount[model.Task], error)
 	UpdateTaskById(id string, values interface{}) error
 	DeleteTaskById(id string) error
+
+	InsertMemberTask(row model.MemberTask) (*model.MemberTask, error)
 }

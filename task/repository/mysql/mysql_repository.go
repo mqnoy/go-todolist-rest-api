@@ -111,3 +111,8 @@ func (m mysqlTaskRepository) DeleteTaskById(id string) error {
 
 	return m.DB.Where("id=?", id).Delete(&model.Task{}).Error
 }
+
+func (m mysqlTaskRepository) InsertMemberTask(row model.MemberTask) (*model.MemberTask, error) {
+	err := m.DB.Create(&row).Error
+	return &row, err
+}

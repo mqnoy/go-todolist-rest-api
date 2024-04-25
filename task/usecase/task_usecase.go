@@ -45,17 +45,24 @@ func (u *taskUseCase) CreateTask(param dto.CreateParam[dto.TaskCreateRequest]) (
 		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
 	}
 
+	// Persist insert task
 	task := model.Task{
 		Title:       createValue.Title,
 		Description: createValue.Description,
 		DueDate:     dueDate,
 	}
-
-	// append member for creating row on memberTask
-	task.Members = append(task.Members, *member)
-
 	taskRow, err := u.taskRepository.InsertTask(task)
 	if err != nil {
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	// Persist insert memberTask
+	if _, err := u.taskRepository.InsertMemberTask(model.MemberTask{
+		TaskID:   taskRow.ID,
+		MemberID: member.ID,
+	}); err != nil {
 		clogger.Logger().SetReportCaller(true)
 		clogger.Logger().Errorf(err.Error())
 		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
