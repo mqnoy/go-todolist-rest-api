@@ -124,11 +124,15 @@ func AppHandler(appctx AppCtx) http.Handler {
 	userUseCase := _userUseCase.New(userRepoMySQL)
 	taskUseCase := _taskUseCase.New(taskRepoMySQL, userUseCase)
 
+	// Initialize Middleware
+	authMiddleware := middleware.NewAuthorizationMiddleware(userUseCase)
+
+	// Fallback
 	mux.NotFound(handler.FallbackHandler)
 
 	// Initialize handler
 	_userHttpDelivery.New(mux, userUseCase)
-	_taskHttpDelivery.New(mux, taskUseCase)
+	_taskHttpDelivery.New(mux, authMiddleware, taskUseCase)
 
 	// Print all routes
 	chi.Walk(mux, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {

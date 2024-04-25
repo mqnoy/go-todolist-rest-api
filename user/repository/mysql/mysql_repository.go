@@ -31,10 +31,10 @@ func (m mysqlUserRepository) InsertMember(row model.Member) (*model.Member, erro
 	return &row, err
 }
 
-func (m mysqlUserRepository) SelectUserByEmail(email string) (*model.User, error) {
-	var row *model.User
+func (m mysqlUserRepository) SelectMemberByEmail(email string) (*model.Member, error) {
+	var row *model.Member
 	if err := m.DB.
-		Joins("INNER JOIN Member ON Member.userId = User.id").
+		Joins("User").
 		Where("User.email=?", email).First(&row).
 		Error; err != nil {
 		return nil, err

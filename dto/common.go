@@ -26,7 +26,7 @@ type SelectAndCount[M any] struct {
 
 type DetailParam struct {
 	ID      string
-	Session JwtPayload
+	Session AuthorizedUser
 }
 
 // list param
@@ -34,19 +34,19 @@ type ListParam[T any] struct {
 	Filters    T
 	Orders     string
 	Pagination Pagination
-	Session    JwtPayload
+	Session    AuthorizedUser
 }
 
 type CreateParam[T any] struct {
 	CreateValue T
-	Session     JwtPayload
+	Session     AuthorizedUser
 }
 
 // update param
 type UpdateParam[T any] struct {
 	ID          string
 	UpdateValue T
-	Session     JwtPayload
+	Session     AuthorizedUser
 }
 
 type Timestamp struct {
