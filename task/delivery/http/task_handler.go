@@ -18,13 +18,14 @@ type taskHandler struct {
 	taskUseCase domain.TaskUseCase
 }
 
-func New(mux *chi.Mux, taskUseCase domain.TaskUseCase) {
+func New(mux *chi.Mux, middlewareAuthorization domain.MiddlewareAuthorization, taskUseCase domain.TaskUseCase) {
 	handler := taskHandler{
 		mux:         mux,
 		taskUseCase: taskUseCase,
 	}
 
 	mux.Route("/tasks", func(r chi.Router) {
+		r.Use(middlewareAuthorization.AuthorizationJWT)
 		r.Post("/", handler.PostCreateTask)
 		r.Put("/{id}", handler.PutUpdateTask)
 		r.Get("/", handler.GetListTasks)
@@ -35,20 +36,21 @@ func New(mux *chi.Mux, taskUseCase domain.TaskUseCase) {
 }
 
 func (h taskHandler) PostCreateTask(w http.ResponseWriter, r *http.Request) {
-	request := &dto.TaskCreateRequest{}
-	if err := render.Bind(r, request); err != nil {
+	var request dto.TaskCreateRequest
+	if err := render.Bind(r, &request); err != nil {
 		handler.ParseResponse(w, r, "", err, cerror.WrapError(http.StatusBadRequest, err))
 		return
 	}
 
 	// Validate payload
-	if err := cvalidator.Validator.Struct(request); err != nil {
+	if err := cvalidator.Validator.Struct(&request); err != nil {
 		handler.ParseResponse(w, r, cvalidator.ErrorValidator, nil, cerror.WrapError(http.StatusBadRequest, err))
 		return
 	}
 
 	param := dto.CreateParam[dto.TaskCreateRequest]{
-		CreateValue: *request,
+		CreateValue: request,
+		Session:     dto.GetAuthorizedUser(r.Context()),
 	}
 
 	// Call usecase
@@ -73,6 +75,7 @@ func (h taskHandler) PutUpdateTask(w http.ResponseWriter, r *http.Request) {
 	param := dto.UpdateParam[dto.TaskCreateRequest]{
 		UpdateValue: request,
 		ID:          chi.URLParam(r, "id"),
+		Session:     dto.GetAuthorizedUser(r.Context()),
 	}
 
 	// Call usecase
@@ -101,6 +104,7 @@ func (h taskHandler) GetListTasks(w http.ResponseWriter, r *http.Request) {
 			Limit:  limit,
 			Offset: offset,
 		},
+		Session: dto.GetAuthorizedUser(r.Context()),
 	}
 
 	// Call usecase
@@ -111,7 +115,8 @@ func (h taskHandler) GetListTasks(w http.ResponseWriter, r *http.Request) {
 func (h taskHandler) GetDetailTask(w http.ResponseWriter, r *http.Request) {
 
 	param := dto.DetailParam{
-		ID: chi.URLParam(r, "id"),
+		ID:      chi.URLParam(r, "id"),
+		Session: dto.GetAuthorizedUser(r.Context()),
 	}
 
 	// Call usecase
@@ -123,7 +128,8 @@ func (h taskHandler) GetDetailTask(w http.ResponseWriter, r *http.Request) {
 func (h taskHandler) PatchMarkDoneTask(w http.ResponseWriter, r *http.Request) {
 
 	param := dto.DetailParam{
-		ID: chi.URLParam(r, "id"),
+		ID:      chi.URLParam(r, "id"),
+		Session: dto.GetAuthorizedUser(r.Context()),
 	}
 
 	// Call usecase
@@ -135,7 +141,8 @@ func (h taskHandler) PatchMarkDoneTask(w http.ResponseWriter, r *http.Request) {
 func (h taskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	param := dto.DetailParam{
-		ID: chi.URLParam(r, "id"),
+		ID:      chi.URLParam(r, "id"),
+		Session: dto.GetAuthorizedUser(r.Context()),
 	}
 
 	// Call usecase

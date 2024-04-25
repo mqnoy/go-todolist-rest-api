@@ -29,8 +29,8 @@ func New(taskRepository domain.TaskRepository, userUseCase domain.UserUseCase) d
 }
 
 func (u *taskUseCase) CreateTask(param dto.CreateParam[dto.TaskCreateRequest]) (*dto.Task, error) {
-	// TODO: Determine member from subject
-	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	// Determine member from subject
+	subjectId := param.Session.UserID
 	member, err := u.userUseCase.GetMemberByUserId(subjectId)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (u *taskUseCase) ComposeTask(m *model.Task) *dto.Task {
 }
 
 func (u *taskUseCase) DeleteTask(param dto.DetailParam) error {
-	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	subjectId := param.Session.UserID
 	member, err := u.userUseCase.GetMemberByUserId(subjectId)
 	if err != nil {
 		return err
@@ -116,8 +116,8 @@ func (u *taskUseCase) DeleteTask(param dto.DetailParam) error {
 }
 
 func (u *taskUseCase) DetailTask(param dto.DetailParam) (*dto.Task, error) {
-	// TODO: Determine member from subject
-	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	// Determine member from subject
+	subjectId := param.Session.UserID
 	member, err := u.userUseCase.GetMemberByUserId(subjectId)
 	if err != nil {
 		return nil, err
@@ -148,8 +148,8 @@ func (u *taskUseCase) ValidateOwnerShipTask(taskMembers []model.MemberTask, memb
 }
 
 func (u *taskUseCase) ListTasks(param dto.ListParam[dto.FilterCommonParams]) (*dto.ListResponse[dto.Task], error) {
-	// TODO: Determine member from subject
-	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	// Determine member from subject
+	subjectId := param.Session.UserID
 	member, err := u.userUseCase.GetMemberByUserId(subjectId)
 	if err != nil {
 		return nil, err
@@ -192,8 +192,8 @@ func (u *taskUseCase) ComposeListTask(m []*model.Task) []*dto.Task {
 }
 
 func (u *taskUseCase) MarkDoneTask(param dto.DetailParam) (*dto.Task, error) {
-	// TODO: Determine member from subject
-	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	// Determine member from subject
+	subjectId := param.Session.UserID
 	member, err := u.userUseCase.GetMemberByUserId(subjectId)
 	if err != nil {
 		return nil, err
@@ -249,8 +249,8 @@ func (u *taskUseCase) DetailTaskById(id string) (*model.Task, error) {
 }
 
 func (u *taskUseCase) UpdateTask(param dto.UpdateParam[dto.TaskCreateRequest]) (*dto.Task, error) {
-	// TODO: Determine member from subject
-	subjectId := "24a68c1b-39e9-48c7-8bf9-9ac0ad3bb312"
+	// Determine member from subject
+	subjectId := param.Session.UserID
 	member, err := u.userUseCase.GetMemberByUserId(subjectId)
 	if err != nil {
 		return nil, err

@@ -31,12 +31,13 @@ func New(userRepo domain.UserRepository) domain.UserUseCase {
 
 // LoginUser implements domain.UserUseCase.
 func (u *userUseCase) LoginUser(payload dto.LoginRequest) (*dto.LoginResponse, error) {
-	userRow, err := u.GetUserByEmail(payload.Email)
+	memberRow, err := u.GetUserByEmail(payload.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	if userRow == nil {
+	userRow := memberRow.User
+	if userRow.Email == "" {
 		return nil, cerror.WrapError(http.StatusBadRequest, fmt.Errorf("email not found"))
 	}
 
@@ -52,19 +53,17 @@ func (u *userUseCase) LoginUser(payload dto.LoginRequest) (*dto.LoginResponse, e
 		return nil, err
 	}
 
-	// Generate refreshToen
+	// Generate refreshToken
 	refreshTknExpiry := jwt.NewNumericDate(time.Now().Add(time.Duration(config.AppConfig.JWT.RefreshTokenExpiry) * time.Second))
 	refreshTkn, err := u.GenerateToken(refreshTknExpiry, userRow.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	clogger.Logger().Error(config.AppConfig.JWT.Key)
-
 	return &dto.LoginResponse{
 		AccessToken:  accessTkn,
 		RefreshToken: refreshTkn,
-		User:         u.ComposeUser(userRow),
+		User:         u.ComposeUserMember(memberRow),
 	}, nil
 }
 
@@ -171,11 +170,11 @@ func (u *userUseCase) GetMemberByUserId(userId string) (*model.Member, error) {
 	return row, nil
 }
 
-func (u *userUseCase) GetUserByEmail(email string) (*model.User, error) {
-	row, err := u.userRepo.SelectUserByEmail(email)
+func (u *userUseCase) GetUserByEmail(email string) (*model.Member, error) {
+	row, err := u.userRepo.SelectMemberByEmail(email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, fmt.Errorf("member not found")
 		}
 
 		clogger.Logger().SetReportCaller(true)
@@ -184,4 +183,19 @@ func (u *userUseCase) GetUserByEmail(email string) (*model.User, error) {
 	}
 
 	return row, nil
+}
+
+func (u *userUseCase) GetMemberInfo(param dto.MemberInfoParam) (*dto.User, error) {
+	row, err := u.userRepo.SelectMemberByUserId(param.SubjectId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("member not found")
+		}
+
+		clogger.Logger().SetReportCaller(true)
+		clogger.Logger().Errorf(err.Error())
+		return nil, cerror.WrapError(http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+
+	return u.ComposeUserMember(row), nil
 }
