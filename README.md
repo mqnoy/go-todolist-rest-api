@@ -38,7 +38,7 @@ TODO: Write Get Started
 
 
 ### Postman Collection
-- [collection](https://www.postman.com/imzalab-preview/workspace/team-workspace/collection/32128861-8f75106a-d84c-410d-a454-8777f4e23cbd?action=share&creator=32128861&active-environment=32128861-42faaaf7-f5e7-43a3-845b-7bb3de22356a)
+- [collection](https://imzalab-preview.postman.co/workspace/Team-Workspace~0db2876e-0a2f-47b7-895c-65f21785eff5/collection/32128861-8f75106a-d84c-410d-a454-8777f4e23cbd?action=share&creator=32128861)
 
 
 ### Contributor
